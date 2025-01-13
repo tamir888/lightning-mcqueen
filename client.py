@@ -2,6 +2,14 @@ import socket
 import threading
 import time
 
+# ANSI color codes
+RESET = "\033[0m"
+GREEN = "\033[92m"
+RED = "\033[91m"
+BLUE = "\033[94m"
+CYAN = "\033[96m"
+YELLOW = "\033[93m"
+
 MAGIC_COOKIE = b'\xAB\xCD\xDC\xBA'
 OFFER_TYPE = b'\x02'
 REQUEST_TYPE = b'\x03'
@@ -11,9 +19,9 @@ PAYLOAD_TYPE = b'\x04'
 def get_client_parameters():
     # Ask the user for file size, the number of TCP connections, and the number of UDP connections
     try:
-        file_size = int(input("Enter the file size in bytes: "))
-        tcp_connections = int(input("Enter the number of TCP connections: "))
-        udp_connections = int(input("Enter the number of UDP connections: "))
+        file_size = int(input(f"{CYAN}Enter the file size in bytes: {RESET}"))
+        tcp_connections = int(input(f"{CYAN}Enter the number of TCP connections: {RESET}"))
+        udp_connections = int(input(f"{CYAN}Enter the number of UDP connections: {RESET}"))
 
         # Validate that all inputs are positive integers
         if file_size <= 0 or tcp_connections <= 0 or udp_connections <= 0:
@@ -22,7 +30,7 @@ def get_client_parameters():
         return file_size, tcp_connections, udp_connections
     except ValueError as err:
         # Handle invalid inputs and prompt the user again
-        print(f"Invalid input: {err}")
+        print(f"{RED}Invalid input: {err}{RESET}")
         return get_client_parameters()
 
 
@@ -31,6 +39,7 @@ def listen_for_offer():
     try:
         udp_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         udp_socket.bind(('0.0.0.0', 12345))  # Listen on port 12345 for UDP offers
+        print(f"{GREEN}Listening for server offers on port 12345...{RESET}")
 
         while True:
             # Receive data from the server
@@ -40,16 +49,16 @@ def listen_for_offer():
             if data[:4] == MAGIC_COOKIE and data[4:5] == OFFER_TYPE:
                 server_udp_port = int.from_bytes(data[5:7], 'big')
                 server_tcp_port = int.from_bytes(data[7:9], 'big')
-                print(f"Received offer from {addr[0]}")
-                print(f"Server UDP port: {server_udp_port}, Server TCP port: {server_tcp_port}")
+                print(f"{BLUE}Received offer from {addr[0]}{RESET}")
+                print(f"{YELLOW}Server UDP port: {server_udp_port}, Server TCP port: {server_tcp_port}{RESET}")
                 return addr[0], server_udp_port, server_tcp_port  # Return the server's IP, UDP and TCP ports
 
     except socket.error as e:
         # Handle socket-related errors
-        print(f"Socket error while listening for offers: {e}")
+        print(f"{RED}Socket error while listening for offers: {e}{RESET}")
     except Exception as e:
         # Handle any other unexpected errors
-        print(f"Error while listening for offers: {e}")
+        print(f"{RED}Error while listening for offers: {e}{RESET}")
     finally:
         udp_socket.close()
 
@@ -70,7 +79,7 @@ def send_tcp_request(server_ip, server_tcp_port, file_size):
 
         # Send the request
         tcp_socket.send(request_message)
-        print(f"Sent TCP request for {file_size} bytes to {server_ip}:{server_tcp_port}")
+        print(f"{CYAN}Sent TCP request for {file_size} bytes to {server_ip}:{server_tcp_port}{RESET}")
 
         # Receive the response (payload)
         data = tcp_socket.recv(1024 + file_size)  # Expecting the payload and the file data
@@ -81,13 +90,13 @@ def send_tcp_request(server_ip, server_tcp_port, file_size):
 
         # Validate the magic cookie and message type in the server's response
         if data[:4] == MAGIC_COOKIE and data[4:5] == PAYLOAD_TYPE:
-            print(
-                f"TCP transfer finished, total time: {transfer_time:.2f} seconds, total speed: {transfer_speed:.2f} bits/second")
+            print(f"{GREEN}TCP transfer finished, total time: {transfer_time:.2f} seconds, "
+                  f"total speed: {transfer_speed:.2f} bits/second{RESET}")
         else:
-            print("Error: Invalid response from server")
+            print(f"{RED}Error: Invalid response from server{RESET}")
     except Exception as err:
         # Handle any exceptions during the TCP request
-        print(f"Error during TCP request: {err}")
+        print(f"{RED}Error during TCP request: {err}{RESET}")
     finally:
         tcp_socket.close()  # Ensure the socket is closed
 
@@ -105,21 +114,21 @@ def send_udp_request(server_ip, server_udp_port, file_size):
 
         # Send the request
         udp_socket.sendto(request_message, (server_ip, server_udp_port))
-        print(f"Sent UDP request for {file_size} bytes to {server_ip}:{server_udp_port}")
+        print(f"{CYAN}Sent UDP request for {file_size} bytes to {server_ip}:{server_udp_port}{RESET}")
 
         # Log the elapsed time for the request
         elapsed_time = time.time() - start_time
-        print(f"UDP Request sent, time taken: {elapsed_time:.2f} seconds")
+        print(f"{YELLOW}UDP Request sent, time taken: {elapsed_time:.2f} seconds{RESET}")
     except Exception as err:
         # Handle any exceptions during the UDP request
-        print(f"Error during UDP request: {err}")
+        print(f"{RED}Error during UDP request: {err}{RESET}")
     finally:
         udp_socket.close()  # Ensure the socket is closed
 
 
 def start_client():
     try:
-        print("Client started, listening for offer requests...")
+        print(f"{BLUE}Client started, listening for offer requests...{RESET}")
 
         # Get user inputs for file size, TCP connections, and UDP connections
         file_size, tcp_connections, udp_connections = get_client_parameters()
@@ -147,10 +156,10 @@ def start_client():
 
     except KeyboardInterrupt:
         # Handle manual interruption
-        print("\nClient stopped manually.")
+        print(f"{RED}\nClient stopped manually.{RESET}")
     except Exception as err:
         # Handle unexpected exceptions
-        print(f"Error in client execution: {err}")
+        print(f"{RED}Error in client execution: {err}{RESET}")
 
 
 if __name__ == "__main__":
@@ -158,7 +167,7 @@ if __name__ == "__main__":
         start_client()
     except KeyboardInterrupt:
         # Handle manual interruption
-        print("\nClient stopped manually.")
+        print(f"{RED}\nClient stopped manually.{RESET}")
     except Exception as e:
         # Handle unexpected exceptions
-        print(f"Unexpected error: {e}")
+        print(f"{RED}Unexpected error: {e}{RESET}")
