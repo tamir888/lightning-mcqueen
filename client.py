@@ -107,12 +107,12 @@ def send_udp_request(server_ip, server_udp_port, file_size):
     udp_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
 
     try:
-        # Step 1: Send the request
+        # Send the request
         request_message = MAGIC_COOKIE + REQUEST_TYPE + file_size.to_bytes(8, 'big')
         udp_socket.sendto(request_message, (server_ip, server_udp_port))
         print(f"{CYAN}Sent UDP request for {file_size} bytes to {server_ip}:{server_udp_port}{RESET}")
 
-        # Step 2: Start receiving data (expect multiple segments)
+        # Start receiving data (expect multiple segments)
         received_segments = 0
         total_segments = 0
         segment_numbers = set()
@@ -121,8 +121,7 @@ def send_udp_request(server_ip, server_udp_port, file_size):
         udp_socket.settimeout(1)
 
         while True:
-
-            # Step 3: Validate the response
+            # Validate the response
             if data[:4] != MAGIC_COOKIE or data[4:5] != PAYLOAD_TYPE:
                 print(f"{RED}Invalid payload received{RESET}")
                 continue
@@ -130,17 +129,16 @@ def send_udp_request(server_ip, server_udp_port, file_size):
             total_segments = int.from_bytes(data[5:13], 'big')
             current_segment = int.from_bytes(data[13:21], 'big')
 
-            # Step 4: Check if we already received this segment
+            # Check if we already received this segment
             if current_segment not in segment_numbers:
                 segment_numbers.add(current_segment)
                 received_segments += 1
             try:
                 data, _ = udp_socket.recvfrom(4096)  # Adjust buffer size as needed
             except socket.timeout:
-                print(f"{RED}No data received for more than 1 second, finishing transfer.{RESET}")
                 break
 
-        # Step 6: Calculate transfer stats
+        # Calculate transfer stats
         transfer_time = time.time() - start_time
         packet_received = 100 - (100 * (total_segments - received_segments) / total_segments)
         print(f"{GREEN}UDP transfer complete in {transfer_time:.2f} seconds, "
