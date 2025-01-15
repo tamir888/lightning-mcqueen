@@ -160,26 +160,27 @@ def start_client():
         # Get user inputs for file size, TCP connections, and UDP connections
         file_size, tcp_connections, udp_connections = get_client_parameters()
 
-        # Listen for offer and get the server's IP address, UDP, and TCP ports
-        server_ip, server_udp_port, server_tcp_port = listen_for_offer()
+        while True:
+            # Listen for offer and get the server's IP address, UDP, and TCP ports
+            server_ip, server_udp_port, server_tcp_port = listen_for_offer()
 
-        # Start the requested number of TCP and UDP request threads
-        tcp_threads = [
-            threading.Thread(target=send_tcp_request, args=(server_ip, server_tcp_port, file_size))
-            for _ in range(tcp_connections)
-        ]
-        udp_threads = [
-            threading.Thread(target=send_udp_request, args=(server_ip, server_udp_port, file_size))
-            for _ in range(udp_connections)
-        ]
+            # Start the requested number of TCP and UDP request threads
+            tcp_threads = [
+                threading.Thread(target=send_tcp_request, args=(server_ip, server_tcp_port, file_size))
+                for _ in range(tcp_connections)
+            ]
+            udp_threads = [
+                threading.Thread(target=send_udp_request, args=(server_ip, server_udp_port, file_size))
+                for _ in range(udp_connections)
+            ]
 
         # Start all threads
-        for thread in tcp_threads + udp_threads:
-            thread.start()
+            for thread in tcp_threads + udp_threads:
+                thread.start()
 
         # Wait for all threads to finish
-        for thread in tcp_threads + udp_threads:
-            thread.join()
+            for thread in tcp_threads + udp_threads:
+                thread.join()
 
     except KeyboardInterrupt:
         # Handle manual interruption
