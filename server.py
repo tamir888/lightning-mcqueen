@@ -28,7 +28,7 @@ def send_offer():
             udp_socket.sendto(offer_message, ('<broadcast>', OFFER_PORT))  # Broadcast to all clients on the network
             time.sleep(1)  # Send offer every second
     except socket.error as e:
-        print(f"{Fore.RED}Socket error in send_offer: {e}")
+        print(f"{Fore.RED}Socket error in send_offer: {e} ")
     finally:
         udp_socket.close()
 
