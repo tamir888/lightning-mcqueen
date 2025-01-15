@@ -39,55 +39,64 @@ def handle_tcp_request(client_socket, client_address):
 
         if data[:4] == MAGIC_COOKIE and data[4:5] == REQUEST_TYPE:
             file_size = int.from_bytes(data[5:13], 'big')
-            print(f"{Fore.YELLOW}Received request for {file_size} bytes from {client_address}")
+            print(f"{Fore.YELLOW}[TCP] Received request for {file_size} bytes from {client_address}")
 
-            # Simulate a file (for now, a simple byte array or file)
             file_data = os.urandom(file_size)  # Generate random data as the file content
 
             # Create the response payload
             response = MAGIC_COOKIE + PAYLOAD_TYPE + file_data
 
             client_socket.sendall(response)
+            print(f"{Fore.GREEN}[TCP] Successfully sent {file_size} bytes to {client_address}")
     except Exception as err:
-        print(f"{Fore.RED}Error handling request from {client_address}: {err}")
+        print(f"{Fore.RED}[TCP] Error handling request from {client_address}: {err}")
     finally:
         # Close the connection
         client_socket.close()
+        print(f"{Fore.BLUE}[TCP] Closed connection with {client_address}")
 
 
 def handle_udp_request(data, client_address, udp_socket):
-    # Step 1: Validate the request
-    if data[:4] != MAGIC_COOKIE or data[4:5] != REQUEST_TYPE:
-        print(f"{Fore.RED}Invalid request from {client_address}")
-        return
+    try:
+        # Validate the request
+        if data[:4] != MAGIC_COOKIE or data[4:5] != REQUEST_TYPE:
+            print(f"{Fore.RED}[UDP] Invalid request from {client_address}")
+            return
 
-    file_size = int.from_bytes(data[5:13], 'big')  # Extract the file size from the request
-    print(f"{Fore.YELLOW}Received UDP request for {file_size} bytes from {client_address}")
+        file_size = int.from_bytes(data[5:13], 'big')  # Extract the file size from the request
+        print(f"{Fore.YELLOW}[UDP] Received request for {file_size} bytes from {client_address}")
 
-    # Step 2: Prepare the data to send (simulate with random data for now)
-    file_data = os.urandom(file_size)  # Simulating the file with random data
+        # Prepare the data to send (simulate with random data for now)
+        file_data = os.urandom(file_size)  # Simulating the file with random data
 
-    # Step 3: Divide the data into segments and send them
-    segment_size = 1024  # 1KB per packet, adjust as needed
-    total_segments = (file_size + segment_size - 1) // segment_size  # Calculate number of segments
-    print(f"{Fore.BLUE}Dividing the file into {total_segments} segments")
+        # Divide the data into segments and send them
+        segment_size = 1024  # 1KB per packet, adjust as needed
+        total_segments = (file_size + segment_size - 1) // segment_size  # Calculate number of segments
+        print(f"{Fore.BLUE}[UDP] Dividing the file into {total_segments} segments")
 
-    for segment_num in range(total_segments):
-        start = segment_num * segment_size
-        end = min(start + segment_size, file_size)
-        segment_data = file_data[start:end]
+        for segment_num in range(total_segments):
+            start = segment_num * segment_size
+            end = min(start + segment_size, file_size)
+            segment_data = file_data[start:end]
 
-        # Construct the payload message with sequence number
-        payload = MAGIC_COOKIE + PAYLOAD_TYPE
-        payload += total_segments.to_bytes(8, 'big')  # Total segment count
-        payload += (segment_num + 1).to_bytes(8, 'big')  # Current segment count
-        payload += segment_data  # Actual data
+            # Construct the payload message with sequence number
+            payload = MAGIC_COOKIE + PAYLOAD_TYPE
+            payload += total_segments.to_bytes(8, 'big')  # Total segment count
+            payload += (segment_num + 1).to_bytes(8, 'big')  # Current segment count
+            payload += segment_data  # Actual data
 
-        # Send the segment
-        udp_socket.sendto(payload, client_address)
+            # Send the segment
+            udp_socket.sendto(payload, client_address)
 
-    # Indicate that the transfer is complete by closing the connection
-    print(f"{Fore.GREEN}Completed UDP transfer to {client_address}")
+        # Indicate that the transfer is complete by closing the connection
+        print(f"{Fore.GREEN}[UDP] Successfully completed transfer of {file_size} bytes to {client_address}")
+
+    except ValueError as ve:
+        print(f"{Fore.RED}[UDP] ValueError while processing request from {client_address}: {ve}")
+    except OSError as oe:
+        print(f"{Fore.RED}[UDP] OS error while sending data to {client_address}: {oe}")
+    except Exception as err:
+        print(f"{Fore.RED}[UDP] Unexpected error while handling request from {client_address}: {err}")
 
 
 def start_server():
