@@ -15,7 +15,7 @@ OFFER_TYPE = b'\x02'
 REQUEST_TYPE = b'\x03'
 PAYLOAD_TYPE = b'\x04'
 OFFER_PORT = 12347
-
+SERVER_IP = '0.0.0.0'
 
 def get_client_parameters():
     # Ask the user for file size, the number of TCP connections, and the number of UDP connections
@@ -39,7 +39,7 @@ def listen_for_offer():
     # Create a UDP socket to listen for server offers
     try:
         udp_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-        udp_socket.bind(('0.0.0.0', OFFER_PORT))  # Listen for UDP offers
+        udp_socket.bind((SERVER_IP, OFFER_PORT))  # Listen for UDP offers
         print(f"{GREEN}Listening for server offers on port {OFFER_PORT}...{RESET}")
 
         while True:
