@@ -140,9 +140,10 @@ def send_udp_request(server_ip, server_udp_port, file_size):
 
         # Calculate transfer stats
         transfer_time = time.time() - start_time
+        transfer_speed = (file_size * 8) / transfer_time  # bits per second
         packet_received = 100 - (100 * (total_segments - received_segments) / total_segments)
-        print(f"{GREEN}UDP transfer complete in {transfer_time:.2f} seconds, "
-              f"packet received: {packet_received:.2f}%{RESET}")
+        print(f"{GREEN}UDP transfer complete in {transfer_time:.2f} seconds, speed: {transfer_speed:.2f} bits/second"
+              f" packet received: {packet_received:.2f}%{RESET}")
 
     except Exception as err:
         print(f"{RED}Error during UDP request: {err}{RESET}")
@@ -178,6 +179,8 @@ def start_client():
             # Wait for all threads to finish
             for thread in tcp_threads + udp_threads:
                 thread.join()
+            print(f"{GREEN}All transfers complete, listening to offer requests{RESET}")
+
 
     except KeyboardInterrupt:
         # Handle manual interruption

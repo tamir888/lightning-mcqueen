@@ -108,7 +108,7 @@ def start_server():
     # Set up the TCP server
     tcp_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     tcp_socket.bind((SERVER_IP, TCP_PORT))
-    tcp_socket.listen(5)  # Max number of connections
+    tcp_socket.listen()  # Max number of connections
 
     # Set up the UDP server
     udp_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
