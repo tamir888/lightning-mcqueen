@@ -64,7 +64,7 @@ def listen_for_offer():
         udp_socket.close()
 
 
-def send_tcp_request(server_ip, server_tcp_port, file_size):
+def send_tcp_request(server_ip, server_tcp_port, file_size, request_num):
     # Create a TCP socket to send the request
     tcp_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 
@@ -91,7 +91,7 @@ def send_tcp_request(server_ip, server_tcp_port, file_size):
 
         # Validate the magic cookie and message type in the server's response
         if data[:4] == MAGIC_COOKIE and data[4:5] == PAYLOAD_TYPE:
-            print(f"{GREEN}TCP transfer finished, total time: {transfer_time:.2f} seconds, "
+            print(f"{GREEN}TCP transfer #{request_num} finished, total time: {transfer_time:.2f} seconds, "
                   f"total speed: {transfer_speed:.2f} bits/second{RESET}")
         else:
             print(f"{RED}Error: Invalid response from server{RESET}")
@@ -102,7 +102,7 @@ def send_tcp_request(server_ip, server_tcp_port, file_size):
         tcp_socket.close()  # Ensure the socket is closed
 
 
-def send_udp_request(server_ip, server_udp_port, file_size):
+def send_udp_request(server_ip, server_udp_port, file_size, request_num):
     # Create a UDP socket to send the request
     udp_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
 
@@ -142,7 +142,7 @@ def send_udp_request(server_ip, server_udp_port, file_size):
         transfer_time = time.time() - start_time
         transfer_speed = (file_size * 8) / transfer_time  # bits per second
         packet_received = 100 - (100 * (total_segments - received_segments) / total_segments)
-        print(f"{GREEN}UDP transfer complete in {transfer_time:.2f} seconds, speed: {transfer_speed:.2f} bits/second"
+        print(f"{GREEN}UDP transfer #{request_num} complete in {transfer_time:.2f} seconds, speed: {transfer_speed:.2f} bits/second"
               f" packet received: {packet_received:.2f}%{RESET}")
 
     except Exception as err:
@@ -164,12 +164,12 @@ def start_client():
 
             # Start the requested number of TCP and UDP request threads
             tcp_threads = [
-                threading.Thread(target=send_tcp_request, args=(server_ip, server_tcp_port, file_size))
-                for _ in range(tcp_connections)
+                threading.Thread(target=send_tcp_request, args=(server_ip, server_tcp_port, file_size, index + 1))
+                for index in range(tcp_connections)
             ]
             udp_threads = [
-                threading.Thread(target=send_udp_request, args=(server_ip, server_udp_port, file_size))
-                for _ in range(udp_connections)
+                threading.Thread(target=send_udp_request, args=(server_ip, server_udp_port, file_size, index + 1))
+                for index in range(udp_connections)
             ]
 
             # Start all threads
