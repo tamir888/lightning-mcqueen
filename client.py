@@ -14,7 +14,7 @@ MAGIC_COOKIE = b'\xAB\xCD\xDC\xBA'
 OFFER_TYPE = b'\x02'
 REQUEST_TYPE = b'\x03'
 PAYLOAD_TYPE = b'\x04'
-
+OFFER_PORT = 12347
 
 def get_client_parameters():
     # Ask the user for file size, the number of TCP connections, and the number of UDP connections
@@ -38,8 +38,8 @@ def listen_for_offer():
     # Create a UDP socket to listen for server offers
     try:
         udp_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-        udp_socket.bind(('0.0.0.0', 12345))  # Listen on port 12345 for UDP offers
-        print(f"{GREEN}Listening for server offers on port 12345...{RESET}")
+        udp_socket.bind(('0.0.0.0', OFFER_PORT))  # Listen for UDP offers
+        print(f"{GREEN}Listening for server offers on port {OFFER_PORT}...{RESET}")
 
         while True:
             # Receive data from the server
@@ -72,7 +72,7 @@ def send_tcp_request(server_ip, server_tcp_port, file_size):
         tcp_socket.connect((server_ip, server_tcp_port))
 
         # Create the request message
-        request_message = MAGIC_COOKIE + REQUEST_TYPE + file_size.to_bytes(8, 'big')
+        request_message = MAGIC_COOKIE + REQUEST_TYPE + file_size.to_bytes(8, 'big') + b"/n"
 
         # Log the start time
         start_time = time.time()
@@ -106,24 +106,51 @@ def send_udp_request(server_ip, server_udp_port, file_size):
     udp_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
 
     try:
-        # Create the request message
+        # Step 1: Send the request
         request_message = MAGIC_COOKIE + REQUEST_TYPE + file_size.to_bytes(8, 'big')
-
-        # Log the start time
-        start_time = time.time()
-
-        # Send the request
         udp_socket.sendto(request_message, (server_ip, server_udp_port))
-        print(f"{CYAN}Sent UDP request for {file_size} bytes to {server_ip}:{server_udp_port}{RESET}")
+        print(f"Sent UDP request for {file_size} bytes to {server_ip}:{server_udp_port}")
 
-        # Log the elapsed time for the request
-        elapsed_time = time.time() - start_time
-        print(f"{YELLOW}UDP Request sent, time taken: {elapsed_time:.2f} seconds{RESET}")
+        # Step 2: Start receiving data (expect multiple segments)
+        received_segments = 0
+        total_segments = 0
+        segment_numbers = set()
+        start_time = time.time()
+        data, _ = udp_socket.recvfrom(4096)
+        udp_socket.settimeout(1)
+
+        while True:
+
+            # Step 3: Validate the response
+            if data[:4] != MAGIC_COOKIE or data[4:5] != PAYLOAD_TYPE:
+                print("Invalid payload received")
+                continue
+
+            total_segments = int.from_bytes(data[5:13], 'big')
+            current_segment = int.from_bytes(data[13:21], 'big')
+
+            # Step 4: Check if we already received this segment
+            if current_segment not in segment_numbers:
+                segment_numbers.add(current_segment)
+                received_segments += 1
+            try:
+                data, _ = udp_socket.recvfrom(4096)  # Adjust buffer size as needed
+            except socket.timeout:
+                print(f"{RED}No data received for more than 1 second, finishing transfer.{RESET}")
+                break
+
+
+        # Step 6: Calculate transfer stats
+        transfer_time = time.time() - start_time
+        packet_received = 100 - (100 * (total_segments - received_segments) / total_segments)
+        print("total " + str(total_segments) + " received " + str(received_segments))
+        print(f"Transfer complete in {transfer_time:.2f} seconds")
+        print(f"Packet received: {packet_received:.2f}%")
+
     except Exception as err:
-        # Handle any exceptions during the UDP request
-        print(f"{RED}Error during UDP request: {err}{RESET}")
+        print(f"Error during UDP request: {err}")
     finally:
-        udp_socket.close()  # Ensure the socket is closed
+        udp_socket.close()
 
 
 def start_client():
