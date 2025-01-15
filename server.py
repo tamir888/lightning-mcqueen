@@ -58,11 +58,11 @@ def handle_tcp_request(client_socket, client_address):
 def handle_udp_request(data, client_address, udp_socket):
     # Step 1: Validate the request
     if data[:4] != MAGIC_COOKIE or data[4:5] != REQUEST_TYPE:
-        print(f"Invalid request from {client_address}")
+        print(f"{Fore.RED}Invalid request from {client_address}")
         return
 
     file_size = int.from_bytes(data[5:13], 'big')  # Extract the file size from the request
-    print(f"Received UDP request for {file_size} bytes from {client_address}")
+    print(f"{Fore.YELLOW}Received UDP request for {file_size} bytes from {client_address}")
 
     # Step 2: Prepare the data to send (simulate with random data for now)
     file_data = os.urandom(file_size)  # Simulating the file with random data
@@ -70,7 +70,7 @@ def handle_udp_request(data, client_address, udp_socket):
     # Step 3: Divide the data into segments and send them
     segment_size = 1024  # 1KB per packet, adjust as needed
     total_segments = (file_size + segment_size - 1) // segment_size  # Calculate number of segments
-    print(f"Dividing the file into {total_segments} segments")
+    print(f"{Fore.BLUE}Dividing the file into {total_segments} segments")
 
     for segment_num in range(total_segments):
         start = segment_num * segment_size
@@ -87,7 +87,7 @@ def handle_udp_request(data, client_address, udp_socket):
         udp_socket.sendto(payload, client_address)
 
     # Indicate that the transfer is complete by closing the connection
-    print(f"Completed UDP transfer to {client_address}")
+    print(f"{Fore.GREEN}Completed UDP transfer to {client_address}")
 
 
 def start_server():

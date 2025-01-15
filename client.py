@@ -16,6 +16,7 @@ REQUEST_TYPE = b'\x03'
 PAYLOAD_TYPE = b'\x04'
 OFFER_PORT = 12347
 
+
 def get_client_parameters():
     # Ask the user for file size, the number of TCP connections, and the number of UDP connections
     try:
@@ -109,7 +110,7 @@ def send_udp_request(server_ip, server_udp_port, file_size):
         # Step 1: Send the request
         request_message = MAGIC_COOKIE + REQUEST_TYPE + file_size.to_bytes(8, 'big')
         udp_socket.sendto(request_message, (server_ip, server_udp_port))
-        print(f"Sent UDP request for {file_size} bytes to {server_ip}:{server_udp_port}")
+        print(f"{CYAN}Sent UDP request for {file_size} bytes to {server_ip}:{server_udp_port}{RESET}")
 
         # Step 2: Start receiving data (expect multiple segments)
         received_segments = 0
@@ -123,7 +124,7 @@ def send_udp_request(server_ip, server_udp_port, file_size):
 
             # Step 3: Validate the response
             if data[:4] != MAGIC_COOKIE or data[4:5] != PAYLOAD_TYPE:
-                print("Invalid payload received")
+                print(f"{RED}Invalid payload received{RESET}")
                 continue
 
             total_segments = int.from_bytes(data[5:13], 'big')
@@ -139,16 +140,14 @@ def send_udp_request(server_ip, server_udp_port, file_size):
                 print(f"{RED}No data received for more than 1 second, finishing transfer.{RESET}")
                 break
 
-
         # Step 6: Calculate transfer stats
         transfer_time = time.time() - start_time
         packet_received = 100 - (100 * (total_segments - received_segments) / total_segments)
-        print("total " + str(total_segments) + " received " + str(received_segments))
-        print(f"Transfer complete in {transfer_time:.2f} seconds")
-        print(f"Packet received: {packet_received:.2f}%")
+        print(f"{GREEN}UDP transfer complete in {transfer_time:.2f} seconds, "
+              f"packet received: {packet_received:.2f}%{RESET}")
 
     except Exception as err:
-        print(f"Error during UDP request: {err}")
+        print(f"{RED}Error during UDP request: {err}{RESET}")
     finally:
         udp_socket.close()
 
@@ -174,11 +173,11 @@ def start_client():
                 for _ in range(udp_connections)
             ]
 
-        # Start all threads
+            # Start all threads
             for thread in tcp_threads + udp_threads:
                 thread.start()
 
-        # Wait for all threads to finish
+            # Wait for all threads to finish
             for thread in tcp_threads + udp_threads:
                 thread.join()
 
