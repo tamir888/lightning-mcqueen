@@ -86,7 +86,7 @@ def send_tcp_request(server_ip, server_tcp_port, file_size, request_num):
         data = tcp_socket.recv(1024 + file_size)  # Expecting the payload and the file data
 
         # Measure transfer time
-        transfer_time = time.time() - start_time
+        transfer_time = time.time() - start_time + 1e-9
         transfer_speed = (file_size * 8) / transfer_time  # bits per second
 
         # Validate the magic cookie and message type in the server's response
