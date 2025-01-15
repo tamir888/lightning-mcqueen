@@ -70,7 +70,7 @@ def handle_udp_request(data, client_address, udp_socket):
         file_data = os.urandom(file_size)  # Simulating the file with random data
 
         # Divide the data into segments and send them
-        segment_size = 1024  # 1KB per packet, adjust as needed
+        segment_size = 8192  # 8KB per packet, adjust as needed
         total_segments = (file_size + segment_size - 1) // segment_size  # Calculate number of segments
         print(f"{Fore.BLUE}[UDP] Dividing the file into {total_segments} segments")
 

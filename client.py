@@ -17,6 +17,7 @@ PAYLOAD_TYPE = b'\x04'
 OFFER_PORT = 12347
 SERVER_IP = '0.0.0.0'
 
+
 def get_client_parameters():
     # Ask the user for file size, the number of TCP connections, and the number of UDP connections
     try:
@@ -117,7 +118,7 @@ def send_udp_request(server_ip, server_udp_port, file_size, request_num):
         total_segments = 0
         segment_numbers = set()
         start_time = time.time()
-        data, _ = udp_socket.recvfrom(4096)
+        data, _ = udp_socket.recvfrom(12288)
         udp_socket.settimeout(1)
 
         while True:
@@ -134,7 +135,7 @@ def send_udp_request(server_ip, server_udp_port, file_size, request_num):
                 segment_numbers.add(current_segment)
                 received_segments += 1
             try:
-                data, _ = udp_socket.recvfrom(4096)  # Adjust buffer size as needed
+                data, _ = udp_socket.recvfrom(12288)  # Adjust buffer size as needed
             except socket.timeout:
                 break
 
@@ -142,8 +143,9 @@ def send_udp_request(server_ip, server_udp_port, file_size, request_num):
         transfer_time = time.time() - start_time
         transfer_speed = (file_size * 8) / transfer_time  # bits per second
         packet_received = 100 - (100 * (total_segments - received_segments) / total_segments)
-        print(f"{GREEN}UDP transfer #{request_num} complete in {transfer_time:.2f} seconds, speed: {transfer_speed:.2f} bits/second"
-              f" packet received: {packet_received:.2f}%{RESET}")
+        print(
+            f"{GREEN}UDP transfer #{request_num} complete in {transfer_time:.2f} seconds, speed: {transfer_speed:.2f} bits/second"
+            f" packet received: {packet_received:.2f}%{RESET}")
 
     except Exception as err:
         print(f"{RED}Error during UDP request: {err}{RESET}")
